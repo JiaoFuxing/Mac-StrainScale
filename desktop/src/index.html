@@ -1,0 +1,1816 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StrainScale Agent 界面原型</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f766e'/%3E%3Cpath d='M8 21l5-10 3 6 2-3 6 7' stroke='white' stroke-width='2.2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --page: #dfe8e7;
+    --shell: #f7faf9;
+    --sidebar: #102623;
+    --sidebar-soft: #173531;
+    --ink: #132320;
+    --muted: #64736f;
+    --faint: #8a9793;
+    --line: #d9e2df;
+    --teal: #0f766e;
+    --teal-dark: #115e59;
+    --teal-soft: #e0f2ef;
+    --green: #15803d;
+    --green-soft: #dcfce7;
+    --amber: #b45309;
+    --amber-soft: #fef3c7;
+    --red: #b91c1c;
+    --red-soft: #fee2e2;
+    --white: #ffffff;
+    --shadow: 0 24px 70px rgba(15, 40, 36, .22);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { height: 100%; }
+
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+    color: var(--ink);
+    background: var(--shell);
+  }
+
+  button, textarea { font: inherit; }
+  button { cursor: pointer; }
+
+  .screen {
+    min-height: 100vh;
+    padding: 0;
+    display: block;
+  }
+
+  .mac-window {
+    width: 100vw;
+    height: 100vh;
+    display: grid;
+    grid-template-columns: 272px minmax(0, 1fr) 318px;
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-areas:
+      "sidebar main right";
+    overflow: hidden;
+    background: var(--shell);
+  }
+
+  .titlebar {
+    display: none;
+  }
+
+  .traffic { display: flex; gap: 8px; padding-left: 18px; }
+  .traffic span { width: 12px; height: 12px; border-radius: 50%; display: block; }
+  .traffic span:nth-child(1) { background: #ff5f57; }
+  .traffic span:nth-child(2) { background: #febc2e; }
+  .traffic span:nth-child(3) { background: #28c840; }
+
+  .titlebar-title {
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: #3f504c;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .titlebar-mode {
+    justify-self: end;
+    margin-right: 16px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .sidebar {
+    grid-area: sidebar;
+    min-height: 0;
+    background: var(--sidebar);
+    color: #c7ddd8;
+    display: flex;
+    flex-direction: column;
+    padding: 16px 14px;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 2px 4px 16px;
+  }
+
+  .brand-mark {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    background: var(--teal);
+    color: white;
+    flex: 0 0 auto;
+  }
+
+  .brand strong { display: block; color: white; font-size: 15px; letter-spacing: .2px; }
+  .brand small { display: block; color: #8db0a9; font-size: 11px; margin-top: 2px; }
+
+  .new-task {
+    width: 100%;
+    border: 0;
+    border-radius: 11px;
+    padding: 11px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: white;
+    background: var(--teal);
+    font-weight: 650;
+    font-size: 14px;
+  }
+  .new-task:hover { background: var(--teal-dark); }
+
+  .side-label {
+    margin: 18px 6px 8px;
+    font-size: 11px;
+    color: #7fa39c;
+    font-weight: 650;
+  }
+
+  .session-list { display: grid; gap: 5px; }
+
+  .session {
+    width: 100%;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: #b8d0cb;
+    padding: 9px 10px;
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr) 18px;
+    align-items: center;
+    gap: 8px;
+    text-align: left;
+    cursor: pointer;
+    outline: none;
+  }
+  .session:hover { background: rgba(255,255,255,.06); color: white; }
+  .session.active { background: var(--sidebar-soft); color: white; }
+  .session:focus-visible { box-shadow: 0 0 0 2px rgba(94,234,212,.35); }
+  .session-title { grid-column: 2; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .session-sub { grid-column: 2; font-size: 11px; color: #7fa39c; margin-top: 2px; }
+  .session-delete {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+    align-self: center;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: #7fa39c;
+    font-size: 13px;
+    line-height: 1;
+    opacity: 0;
+    transition: opacity .15s ease, background .15s ease, color .15s ease;
+  }
+  .session:hover .session-delete, .session.active .session-delete, .session:focus-within .session-delete { opacity: 1; }
+  .session-delete:hover { background: rgba(255,255,255,.12); color: #fecaca; }
+  .session-empty { padding: 9px 10px; font-size: 12px; color: #7fa39c; }
+
+  .sidebar-footer {
+    margin-top: auto;
+    border: 1px solid rgba(255,255,255,.09);
+    background: rgba(255,255,255,.05);
+    border-radius: 12px;
+    padding: 11px;
+    display: grid;
+    gap: 7px;
+  }
+  .runtime-line { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; }
+  .runtime-line span:first-child { color: #8db0a9; }
+  .runtime-line span:last-child { color: #e5f4f1; text-align: right; }
+  .update-link {
+    font-size: 12px;
+    font-weight: 650;
+    color: #5eead4;
+    text-decoration: none;
+  }
+  .update-link:hover { color: #99f6e4; text-decoration: underline; }
+
+  .main {
+    grid-area: main;
+    min-width: 0;
+    min-height: 0;
+    display: grid;
+    grid-template-rows: 62px minmax(0, 1fr) auto;
+    background: var(--shell);
+  }
+
+  .main-header {
+    border-bottom: 1px solid var(--line);
+    padding: 0 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    background: rgba(255,255,255,.55);
+  }
+  .main-header h1 { margin: 0; font-size: 16px; }
+  .main-header p { margin: 3px 0 0; font-size: 12px; color: var(--muted); }
+
+  .header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border-radius: 999px;
+    padding: 5px 9px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid transparent;
+    white-space: nowrap;
+  }
+  .badge.green { color: var(--green); background: var(--green-soft); border-color: #bbf7d0; }
+  .badge.amber { color: var(--amber); background: var(--amber-soft); border-color: #fde68a; }
+  .badge.teal { color: var(--teal-dark); background: var(--teal-soft); border-color: #99f6e4; }
+
+  .conversation {
+    min-height: 0;
+    overflow: auto;
+    padding: 24px 26px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .message {
+    max-width: 820px;
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 12px;
+    flex: 0 0 auto;
+  }
+  .message.user { align-self: flex-end; grid-template-columns: minmax(0, 1fr) 34px; width: min(760px, 92%); }
+  .avatar {
+    width: 34px; height: 34px; border-radius: 10px;
+    display: grid; place-items: center;
+    font-size: 12px; font-weight: 700;
+  }
+  .assistant .avatar { background: var(--teal-soft); color: var(--teal-dark); }
+  .user .avatar { background: #dfe9e7; color: #334944; order: 2; }
+
+  .bubble {
+    border: 1px solid var(--line);
+    background: var(--white);
+    border-radius: 14px;
+    padding: 13px 15px;
+    box-shadow: 0 1px 2px rgba(15,23,42,.04);
+  }
+  .user .bubble { background: #123d38; color: #e9f7f5; border-color: #123d38; }
+  .bubble p { margin: 0; line-height: 1.65; font-size: 14px; }
+  .bubble p + p { margin-top: 8px; }
+
+  .plan-grid {
+    margin-top: 12px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .plan-item {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 9px;
+    background: #fbfdfc;
+  }
+  .plan-item b { display: block; font-size: 12px; margin-bottom: 4px; }
+  .plan-item span { font-size: 11px; color: var(--muted); line-height: 1.4; display: block; }
+
+  .tool-card, .job-card {
+    align-self: flex-start;
+    width: min(820px, 96%);
+    margin-left: 46px;
+    border: 1px solid var(--line);
+    background: var(--white);
+    border-radius: 14px;
+    overflow: hidden;
+    flex: 0 0 auto;
+  }
+  .card-head {
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    background: #fbfdfc;
+  }
+  .card-head strong { font-size: 13px; }
+  .card-head span { font-size: 12px; color: var(--muted); }
+
+  .tool-row {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: center;
+    padding: 11px 14px;
+    border-bottom: 1px solid #edf1f0;
+  }
+  .tool-row:last-child { border-bottom: 0; }
+  .tool-icon {
+    width: 30px; height: 30px; border-radius: 9px;
+    display: grid; place-items: center;
+    background: var(--teal-soft); color: var(--teal-dark);
+  }
+  .tool-name { font-size: 13px; font-weight: 650; }
+  .tool-path { font-size: 12px; color: var(--muted); margin-top: 3px; overflow-wrap: anywhere; }
+  .status { font-size: 12px; font-weight: 650; white-space: nowrap; }
+  .status.ok { color: var(--green); }
+  .status.run { color: var(--teal); }
+  .status.wait { color: var(--muted); }
+
+  .job-body { padding: 14px; display: grid; gap: 13px; }
+  .job-title-row { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+  .job-title-row strong { font-size: 14px; }
+  .job-title-row span { font-size: 12px; color: var(--muted); }
+  .progress-track { height: 8px; border-radius: 999px; background: #e7eeec; overflow: hidden; }
+  .progress-fill { height: 100%; width: 68%; border-radius: inherit; background: linear-gradient(90deg, var(--teal), #14b8a6); }
+
+  .step-list { display: grid; gap: 8px; }
+  .step { display: grid; grid-template-columns: 20px 1fr auto; gap: 8px; align-items: center; font-size: 13px; }
+  .step-dot { width: 10px; height: 10px; border-radius: 50%; justify-self: center; }
+  .step-dot.done { background: var(--green); }
+  .step-dot.running { background: var(--teal); box-shadow: 0 0 0 4px rgba(20,184,166,.16); }
+  .step-dot.wait { background: #cbd5d1; }
+  .step time { font-size: 12px; color: var(--faint); }
+
+  .composer {
+    border-top: 1px solid var(--line);
+    background: rgba(255,255,255,.72);
+    padding: 14px 22px 18px;
+  }
+  .composer-box {
+    border: 1px solid #c8d4d1;
+    background: white;
+    border-radius: 16px;
+    padding: 10px 12px;
+    display: grid;
+    grid-template-columns: auto minmax(0,1fr) auto;
+    gap: 10px;
+    align-items: end;
+    box-shadow: 0 4px 18px rgba(15,23,42,.05);
+  }
+  .icon-btn {
+    border: 0;
+    background: #edf4f2;
+    color: #36514c;
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: grid; place-items: center;
+  }
+  .icon-btn:hover { background: #dfeae8; }
+  .composer textarea {
+    width: 100%;
+    height: 42px;
+    max-height: 140px;
+    border: 0;
+    outline: 0;
+    resize: none;
+    padding: 8px 2px;
+    font-size: 14px;
+    line-height: 1.5;
+    background: transparent;
+  }
+  .send-btn {
+    border: 0;
+    border-radius: 10px;
+    background: var(--teal);
+    color: white;
+    min-width: 64px;
+    height: 38px;
+    font-weight: 650;
+  }
+  .send-btn:hover { background: var(--teal-dark); }
+  .composer-note { margin-top: 8px; font-size: 11px; color: var(--faint); text-align: center; }
+
+  .right-panel {
+    grid-area: right;
+    min-height: 0;
+    overflow: auto;
+    border-left: 1px solid var(--line);
+    background: #f3f7f6;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .panel-card {
+    border: 1px solid var(--line);
+    background: white;
+    border-radius: 14px;
+    padding: 14px;
+  }
+  .panel-card h2 {
+    margin: 0 0 12px;
+    font-size: 14px;
+  }
+  .kv { display: grid; gap: 9px; }
+  .kv-row { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; }
+  .kv-row span:first-child { color: var(--muted); }
+  .kv-row span:last-child { text-align: right; font-weight: 600; }
+  .args-box { margin: 6px 0 0; padding: 8px; background: #f6f8f7; border-radius: 8px; font-size: 11px; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.45; }
+  .pipeline-form { display: grid; gap: 8px; margin-top: 10px; }
+  .pipeline-form label { display: grid; gap: 4px; font-size: 11px; color: var(--muted); }
+  .pipeline-form input, .pipeline-form select {
+    width: 100%; min-width: 0; height: 32px; border: 1px solid var(--line); border-radius: 9px; padding: 8px 9px;
+    font-size: 11px; line-height: 14px; color: var(--ink); outline: none; background: #fbfdfc;
+  }
+  .pipeline-form input:focus, .pipeline-form select:focus { border-color: #5eead4; background: white; }
+  .pipeline-form select:disabled { color: var(--muted); cursor: wait; }
+  .pipeline-db-row { display: grid; grid-template-columns: minmax(0, 1fr) 96px; gap: 6px; align-items: end; }
+  .pipeline-run {
+    width: 100%; height: 34px; border: 0; border-radius: 9px; background: var(--teal);
+    color: white; font-size: 12px; font-weight: 650;
+  }
+  .pipeline-run:disabled { opacity: .6; cursor: wait; }
+  .pipeline-run.secondary { background: #0f766e; }
+  .pipeline-stage-b { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--line); }
+  .pipeline-result { margin-top: 10px; display: grid; gap: 6px; }
+  .pipeline-result .state { font-size: 12px; font-weight: 650; }
+  .pipeline-result .state.ok { color: var(--green); }
+  .pipeline-result .state.bad { color: var(--red); }
+  .pipeline-result pre {
+    margin: 0; max-height: 180px; overflow: auto; padding: 8px; border-radius: 8px;
+    background: #f6f8f7; font-size: 10px; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere;
+  }
+  .pipeline-progress { margin-top: 10px; display: grid; gap: 6px; }
+  .pipeline-progress[hidden] { display: none; }
+  .pipeline-progress-head { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; font-size: 12px; }
+  .pipeline-progress-head strong { font-size: 12px; color: var(--ink); }
+  .pipeline-progress-head span { color: var(--muted); font-weight: 650; }
+  .pipeline-progress-track { height: 8px; border-radius: 999px; background: #e7eeec; overflow: hidden; }
+  .pipeline-progress-fill { height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, var(--teal), #14b8a6); transition: width .25s ease; }
+  .pipeline-progress-message { margin: 0; font-size: 11px; color: var(--muted); line-height: 1.45; overflow-wrap: anywhere; }
+  .pipeline-progress-elapsed { margin: 0; font-size: 11px; color: var(--faint); }
+
+  .meter { display: grid; gap: 10px; }
+  .meter-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+  .meter-head h2 { margin: 0; }
+  .meter-updated { font-size: 10px; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .meter-row { display: grid; gap: 5px; font-size: 12px; }
+  .meter-row div:first-child { display: flex; justify-content: space-between; color: var(--muted); }
+  .meter-row span:last-child { font-variant-numeric: tabular-nums; }
+  .mini-track { height: 7px; background: #e7eeec; border-radius: 999px; overflow: hidden; }
+  .mini-fill { height: 100%; background: var(--teal); border-radius: inherit; transition: width .2s ease; }
+
+
+  .graph-wrap { border: 1px solid #e2e8e6; border-radius: 12px; overflow: hidden; background: #fbfdfc; }
+  .graph-wrap svg { display: block; width: 100%; height: auto; }
+  .graph-caption { padding: 8px 10px; border-top: 1px solid #e2e8e6; font-size: 11px; color: var(--muted); }
+
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 28px;
+    transform: translate(-50%, 18px);
+    background: #102623;
+    color: white;
+    padding: 10px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .18s ease, transform .18s ease;
+    box-shadow: 0 12px 30px rgba(0,0,0,.22);
+    z-index: 10;
+    max-width: calc(100vw - 32px);
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  @media (max-width: 1200px) {
+    .mac-window {
+      grid-template-columns: 260px minmax(0, 1fr);
+      grid-template-areas:
+        "sidebar main";
+    }
+    .right-panel { display: none; }
+  }
+
+  @media (max-width: 760px) {
+    .screen { padding: 0; }
+    .mac-window {
+      width: 100vw;
+      height: 100vh;
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas:
+        "main";
+    }
+    .sidebar { display: none; }
+    .conversation { padding: 16px 14px; }
+    .composer { padding: 12px 14px 14px; }
+    .plan-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .tool-card, .job-card { margin-left: 0; width: 100%; }
+    .message { grid-template-columns: 28px minmax(0,1fr); }
+    .avatar { width: 28px; height: 28px; }
+    .main-header { padding: 0 14px; }
+  }
+  .lang-toggle{border:1px solid rgba(15,118,110,.35);background:#fff;color:var(--teal-dark);font-size:12px;font-weight:650;letter-spacing:.04em;padding:5px 10px;border-radius:999px;cursor:pointer;white-space:nowrap;}
+  .lang-toggle:hover{background:var(--teal-soft);border-color:#99f6e4;}
+</style>
+</head>
+<body>
+<div class="screen">
+  <div class="mac-window">
+    <div class="titlebar">
+      <div class="traffic"><span></span><span></span><span></span></div>
+      <div class="titlebar-title">StrainScale Agent — Apple Silicon 本地运行时</div>
+      <div class="titlebar-mode">静态原型</div>
+    </div>
+
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M5 17l4-8 3 5 2-3 5 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+        </div>
+        <div>
+          <strong>StrainScale</strong>
+          <small>Local strain intelligence</small>
+        </div>
+      </div>
+
+      <button class="new-task" id="newTaskBtn" type="button">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"></path>
+        </svg>
+        新建分析任务
+      </button>
+
+      <div class="side-label">最近会话</div>
+      <div class="session-list" id="sessionList"></div>
+
+      <div class="sidebar-footer">
+        <div class="runtime-line"><span>分析内核</span><span>原生 arm64</span></div>
+        <a class="update-link" id="updateLink" href="https://www.genomap.cn" target="_blank" rel="noreferrer">获取更新</a>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="main-header">
+        <div>
+          <h1 id="mainTitle">新分析任务</h1>
+          <p id="mainSubtitle">本地运行 · 对话自动保存</p>
+        </div>
+        <div class="header-actions">
+          <button class="lang-toggle" id="langToggle" type="button" aria-label="切换界面语言">EN</button>
+          <span class="badge teal">Apple Silicon</span>
+        </div>
+      </header>
+
+      <section class="conversation" id="conversation"></section>
+
+      <footer class="composer">
+        <div class="composer-box">
+          <button class="icon-btn" type="button" aria-label="添加任务目录" data-toast="演示原型：文件选择器尚未接入">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"></path>
+            </svg>
+          </button>
+          <textarea id="promptInput" placeholder="描述分析任务，或让 Agent 生成、检查一段流程脚本…"></textarea>
+          <button class="send-btn" id="sendBtn" type="button">发送</button>
+        </div>
+        <div class="composer-note">消息先经过意图路由，再交给本地流程执行器；不联网、不上传数据</div>
+      </footer>
+    </main>
+
+    <aside class="right-panel">
+      <section class="panel-card">
+        <h2>StrainScale 流程</h2>
+        <div class="pipeline-form">
+          <div class="pipeline-db-row">
+            <label>数据库目录
+              <input id="pipelineDatabase" type="text" placeholder="/path/to/Vp-db">
+            </label>
+            <label>聚类 cutoff
+              <select id="pipelineCutoff" disabled>
+                <option value="">自动加载</option>
+              </select>
+            </label>
+          </div>
+          <label>列表文件
+            <input id="pipelineList" type="text" placeholder="/path/to/list">
+          </label>
+          <label>输出目录
+            <input id="pipelineOutput" type="text" placeholder="/path/to/output">
+          </label>
+          <button class="pipeline-run" id="runPipelineModeBtn" type="button">开始运行</button>
+          <div class="pipeline-progress" id="pipelineProgress" hidden>
+            <div class="pipeline-progress-head">
+              <strong id="pipelineProgressStage">准备中</strong>
+              <span id="pipelineProgressPercent">0%</span>
+            </div>
+            <div class="pipeline-progress-track">
+              <div class="pipeline-progress-fill" id="pipelineProgressFill"></div>
+            </div>
+            <p class="pipeline-progress-message" id="pipelineProgressMessage"></p>
+            <p class="pipeline-progress-elapsed" id="pipelineProgressElapsed"></p>
+          </div>
+        </div>
+        <div class="pipeline-result" id="pipelineResult"></div>
+      </section>
+
+      <section class="panel-card">
+        <div class="meter-head">
+          <h2>资源</h2>
+          <span class="meter-updated" id="metricsUpdated">读取中…</span>
+        </div>
+        <div class="meter">
+          <div class="meter-row"><div><span>CPU</span><span id="cpuValue">—</span></div><div class="mini-track"><div class="mini-fill" id="cpuFill" style="width:0%"></div></div></div>
+          <div class="meter-row"><div><span>内存</span><span id="memoryValue">—</span></div><div class="mini-track"><div class="mini-fill" id="memoryFill" style="width:0%"></div></div></div>
+        </div>
+      </section>
+
+      <section class="panel-card">
+        <h2>知识图谱</h2>
+        <div class="graph-wrap">
+          <svg viewBox="0 0 286 190" role="img" aria-label="知识图谱迷你示意图">
+            <line x1="70" y1="62" x2="142" y2="82" stroke="#94a3b8" stroke-width="1.5"></line>
+            <line x1="142" y1="82" x2="216" y2="52" stroke="#94a3b8" stroke-width="1.5"></line>
+            <line x1="142" y1="82" x2="116" y2="142" stroke="#94a3b8" stroke-width="1.5"></line>
+            <line x1="116" y1="142" x2="207" y2="143" stroke="#94a3b8" stroke-width="1.5"></line>
+            <circle cx="70" cy="62" r="25" fill="#dff3ef" stroke="#0f766e" stroke-width="1.6"></circle>
+            <circle cx="142" cy="82" r="28" fill="#ecfdf5" stroke="#16a34a" stroke-width="1.6"></circle>
+            <circle cx="216" cy="52" r="24" fill="#fef3c7" stroke="#d97706" stroke-width="1.6"></circle>
+            <circle cx="116" cy="142" r="23" fill="#f0f9ff" stroke="#0284c7" stroke-width="1.6"></circle>
+            <circle cx="207" cy="143" r="23" fill="#fef2f2" stroke="#dc2626" stroke-width="1.6"></circle>
+            <text x="70" y="66" text-anchor="middle" font-size="11" fill="#115e59">样本</text>
+            <text x="142" y="86" text-anchor="middle" font-size="11" fill="#15803d">菌株</text>
+            <text x="216" y="56" text-anchor="middle" font-size="11" fill="#b45309">基因</text>
+            <text x="116" y="146" text-anchor="middle" font-size="11" fill="#0369a1">表型</text>
+            <text x="207" y="147" text-anchor="middle" font-size="11" fill="#b91c1c">证据</text>
+          </svg>
+          <div class="graph-caption">本体 v0.1 · 关系需带证据来源</div>
+        </div>
+      </section>
+    </aside>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  const toastEl = document.getElementById('toast');
+  const conversationEl = document.getElementById('conversation');
+  const sessionListEl = document.getElementById('sessionList');
+  const newTaskBtn = document.getElementById('newTaskBtn');
+  const mainTitleEl = document.getElementById('mainTitle');
+  const mainSubtitleEl = document.getElementById('mainSubtitle');
+  const sendBtn = document.getElementById('sendBtn');
+  const input = document.getElementById('promptInput');
+  const pipelineDatabaseEl = document.getElementById('pipelineDatabase');
+  const pipelineCutoffEl = document.getElementById('pipelineCutoff');
+  const pipelineListEl = document.getElementById('pipelineList');
+  const pipelineOutputEl = document.getElementById('pipelineOutput');
+  const runPipelineModeBtn = document.getElementById('runPipelineModeBtn');
+  const pipelineResultEl = document.getElementById('pipelineResult');
+  const pipelineProgressEl = document.getElementById('pipelineProgress');
+  const pipelineProgressStageEl = document.getElementById('pipelineProgressStage');
+  const pipelineProgressPercentEl = document.getElementById('pipelineProgressPercent');
+  const pipelineProgressFillEl = document.getElementById('pipelineProgressFill');
+  const pipelineProgressMessageEl = document.getElementById('pipelineProgressMessage');
+  const pipelineProgressElapsedEl = document.getElementById('pipelineProgressElapsed');
+  const cpuValueEl = document.getElementById('cpuValue');
+  const cpuFillEl = document.getElementById('cpuFill');
+  const memoryValueEl = document.getElementById('memoryValue');
+  const memoryFillEl = document.getElementById('memoryFill');
+  const metricsUpdatedEl = document.getElementById('metricsUpdated');
+  const updateLink = document.getElementById('updateLink');
+
+  const tauri = window.__TAURI__;
+  const invoke = tauri && tauri.core && tauri.core.invoke;
+  let toastTimer = null;
+
+  function showToast(message) {
+    toastEl.textContent = message;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () {
+      toastEl.classList.remove('show');
+    }, 2200);
+  }
+
+  document.querySelectorAll('[data-toast]').forEach(function (el) {
+    el.addEventListener('click', function () {
+      showToast(el.getAttribute('data-toast'));
+    });
+  });
+
+  function makeElement(tag, className) {
+    const element = document.createElement(tag);
+    if (className) element.className = className;
+    return element;
+  }
+
+  const SESSIONS_KEY = 'strainscale.sessions.v1';
+  const MAX_SESSIONS = 40;
+  let sessions = [];
+  let currentSessionId = null;
+  let taskSessionId = null;
+
+  function loadSessions() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(SESSIONS_KEY) || '[]');
+      sessions = Array.isArray(parsed) ? parsed.filter(function (session) {
+        return session && session.id && Array.isArray(session.messages);
+      }) : [];
+    } catch (error) {
+      sessions = [];
+    }
+  }
+
+  function saveSessions() {
+    try {
+      sessions.sort(function (left, right) {
+        return (right.updatedAt || 0) - (left.updatedAt || 0);
+      });
+      if (sessions.length > MAX_SESSIONS) {
+        sessions = sessions.slice(0, MAX_SESSIONS);
+      }
+      localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions));
+    } catch (error) {
+      // Ignore storage failures.
+    }
+  }
+
+  function sortedSessions() {
+    return sessions.slice().sort(function (left, right) {
+      return (right.updatedAt || 0) - (left.updatedAt || 0);
+    });
+  }
+
+  function currentSession() {
+    return sessions.find(function (session) {
+      return session.id === currentSessionId;
+    }) || null;
+  }
+
+  function truncateTitle(text) {
+    const normalized = String(text || '').replace(/\s+/g, ' ').trim();
+    if (!normalized) {
+      return '分析任务';
+    }
+    return normalized.length > 28 ? normalized.slice(0, 28) + '…' : normalized;
+  }
+
+  function createSession(title) {
+    const now = Date.now();
+    const session = {
+      id: 's-' + now + '-' + Math.random().toString(36).slice(2, 7),
+      title: truncateTitle(title),
+      createdAt: now,
+      updatedAt: now,
+      messages: []
+    };
+    sessions.unshift(session);
+    currentSessionId = session.id;
+    saveSessions();
+    renderSessionList();
+    updateHeader(session);
+    return session;
+  }
+
+  function recordMessage(role, text, targetSessionId) {
+    const content = String(text || '').trim();
+    if (!content) {
+      return;
+    }
+    let session = null;
+    if (targetSessionId) {
+      session = sessions.find(function (item) {
+        return item.id === targetSessionId;
+      }) || null;
+    }
+    if (!session) {
+      session = currentSession();
+    }
+    if (!session) {
+      session = createSession(role === 'user' ? content : '分析任务');
+    }
+    session.messages.push({ role: role, text: content, at: Date.now() });
+    session.updatedAt = Date.now();
+    if (role === 'user') {
+      const userCount = session.messages.filter(function (message) {
+        return message.role === 'user';
+      }).length;
+      if (userCount === 1) {
+        session.title = truncateTitle(content);
+      }
+    }
+    saveSessions();
+    renderSessionList();
+    updateHeader(session.id === currentSessionId ? session : currentSession());
+  }
+
+  function formatSessionTime(timestamp) {
+    const value = Number(timestamp) || 0;
+    const diff = Date.now() - value;
+    if (diff >= 0 && diff < 60 * 1000) {
+      return '刚刚';
+    }
+    if (diff >= 0 && diff < 60 * 60 * 1000) {
+      return Math.floor(diff / (60 * 1000)) + ' 分钟前';
+    }
+    const date = new Date(value);
+    const now = new Date();
+    const hh = String(date.getHours()).padStart(2, '0');
+    const mm = String(date.getMinutes()).padStart(2, '0');
+    if (date.toDateString() === now.toDateString()) {
+      return '今天 ' + hh + ':' + mm;
+    }
+    if (date.getFullYear() === now.getFullYear()) {
+      return (date.getMonth() + 1) + '月' + date.getDate() + '日';
+    }
+    return date.getFullYear() + '年' + (date.getMonth() + 1) + '月' + date.getDate() + '日';
+  }
+
+  function updateHeader(session) {
+    mainTitleEl.textContent = session ? session.title : '新分析任务';
+    mainSubtitleEl.textContent = session
+      ? ('本地会话 · ' + session.messages.length + ' 条消息 · 自动保存')
+      : '本地运行 · 对话自动保存';
+  }
+
+  function renderSessionList() {
+    sessionListEl.innerHTML = '';
+    const ordered = sortedSessions();
+    if (!ordered.length) {
+      const empty = makeElement('div', 'session-empty');
+      empty.textContent = '暂无历史会话';
+      sessionListEl.appendChild(empty);
+      return;
+    }
+    ordered.forEach(function (session) {
+      const row = makeElement('div', 'session');
+      row.setAttribute('role', 'button');
+      row.tabIndex = 0;
+      if (session.id === currentSessionId) {
+        row.classList.add('active');
+      }
+      const icon = makeElement('span');
+      icon.innerHTML = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 4h10v16H7z" stroke="currentColor" stroke-width="1.8"></path><path d="M9.5 8h5M9.5 12h5M9.5 16h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg>';
+      const title = makeElement('span', 'session-title');
+      title.textContent = session.title;
+      const sub = makeElement('span', 'session-sub');
+      sub.textContent = formatSessionTime(session.updatedAt) + ' · ' + session.messages.length + ' 条消息';
+      const remove = makeElement('button', 'session-delete');
+      remove.type = 'button';
+      remove.title = '删除会话';
+      remove.setAttribute('aria-label', '删除会话');
+      remove.textContent = '×';
+      remove.addEventListener('click', function (event) {
+        event.stopPropagation();
+        deleteSession(session.id);
+      });
+      row.addEventListener('click', function () {
+        openSession(session.id);
+      });
+      row.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          openSession(session.id);
+        }
+      });
+      row.append(icon, title, sub, remove);
+      sessionListEl.appendChild(row);
+    });
+  }
+
+  function renderWelcome() {
+    conversationEl.innerHTML = '';
+    const wrap = makeElement('div', 'message assistant');
+    const avatar = makeElement('div', 'avatar');
+    const bubble = makeElement('div', 'bubble');
+    avatar.textContent = 'AI';
+    [
+      '你好，我是 StrainScale 本地助手。',
+      '可以直接描述任务并给出路径，例如：运行 /path/to/db、/path/to/sample.list、/path/to/output。',
+      '每次对话都会自动保存到左侧“最近会话”，点击即可恢复。'
+    ].forEach(function (line) {
+      const paragraph = makeElement('p');
+      paragraph.textContent = line;
+      bubble.appendChild(paragraph);
+    });
+    wrap.append(avatar, bubble);
+    conversationEl.appendChild(wrap);
+  }
+
+  function renderSession(session) {
+    conversationEl.innerHTML = '';
+    if (!session.messages.length) {
+      renderWelcome();
+      return;
+    }
+    session.messages.forEach(function (message) {
+      if (message.role === 'user') {
+        renderUserMessage(message.text);
+      } else {
+        renderAssistantMessage(message.text);
+      }
+    });
+    conversationEl.scrollTop = conversationEl.scrollHeight;
+  }
+
+  function openSession(id) {
+    const session = sessions.find(function (item) {
+      return item.id === id;
+    });
+    if (!session) {
+      return;
+    }
+    currentSessionId = id;
+    renderSession(session);
+    renderSessionList();
+    updateHeader(session);
+  }
+
+  function deleteSession(id) {
+    if (taskSessionId === id) {
+      showToast('任务运行中，暂不能删除该会话');
+      return;
+    }
+    const index = sessions.findIndex(function (session) {
+      return session.id === id;
+    });
+    if (index === -1) {
+      return;
+    }
+    const wasCurrent = currentSessionId === id;
+    sessions.splice(index, 1);
+    saveSessions();
+    showToast('会话已删除');
+    if (!wasCurrent) {
+      renderSessionList();
+      return;
+    }
+    currentSessionId = null;
+    const latest = sortedSessions()[0];
+    if (latest) {
+      openSession(latest.id);
+    } else {
+      renderSessionList();
+      renderWelcome();
+      updateHeader(null);
+    }
+  }
+
+  function startNewTask() {
+    currentSessionId = null;
+    input.value = '';
+    renderWelcome();
+    renderSessionList();
+    updateHeader(null);
+    input.focus();
+    showToast('已新建分析任务');
+  }
+
+  function renderUserMessage(text) {
+    const wrap = makeElement('div', 'message user');
+    const bubble = makeElement('div', 'bubble');
+    const paragraph = makeElement('p');
+    const avatar = makeElement('div', 'avatar');
+    paragraph.textContent = text;
+    avatar.textContent = '我';
+    bubble.appendChild(paragraph);
+    wrap.append(bubble, avatar);
+    conversationEl.appendChild(wrap);
+    wrap.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }
+
+  function renderAssistantMessage(text) {
+    const wrap = makeElement('div', 'message assistant');
+    const avatar = makeElement('div', 'avatar');
+    const bubble = makeElement('div', 'bubble');
+    avatar.textContent = 'AI';
+    String(text).split(/\n+/).filter(Boolean).forEach(function (line) {
+      const paragraph = makeElement('p');
+      paragraph.textContent = line;
+      bubble.appendChild(paragraph);
+    });
+    wrap.append(avatar, bubble);
+    conversationEl.appendChild(wrap);
+    wrap.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }
+
+  function appendUserMessage(text) {
+    recordMessage('user', text);
+    renderUserMessage(text);
+  }
+
+  function appendAssistantMessage(text) {
+    const targetId = taskSessionId;
+    recordMessage('assistant', text, targetId);
+    if (!targetId || targetId === currentSessionId) {
+      renderAssistantMessage(text);
+    }
+  }
+
+  function appendToolCalls(toolCalls) {
+    if (taskSessionId && taskSessionId !== currentSessionId) {
+      return;
+    }
+    const card = makeElement('div', 'tool-card');
+    const head = makeElement('div', 'card-head');
+    const title = makeElement('strong');
+    const subtitle = makeElement('span');
+    title.textContent = '受控 Skill 调用';
+    subtitle.textContent = '已解析流程参数 · 正在交给执行器';
+    head.append(title, subtitle);
+    card.appendChild(head);
+
+    toolCalls.forEach(function (toolCall) {
+      const fn = toolCall.function || {};
+      let args = fn.arguments || '';
+      try {
+        const parsed = JSON.parse(args);
+        if (parsed && parsed.mode) {
+          parsed.mode = formatPipelineMode(parsed.mode);
+        }
+        args = JSON.stringify(parsed, null, 2);
+      } catch (error) {
+        // Keep the original arguments string if parsing fails.
+      }
+
+      const row = makeElement('div', 'tool-row');
+      const icon = makeElement('div', 'tool-icon');
+      const middle = makeElement('div');
+      const name = makeElement('div', 'tool-name');
+      const argsBox = makeElement('pre', 'args-box');
+      const status = makeElement('div', 'status run');
+      icon.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 8h10M7 12h7M7 16h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg>';
+      name.textContent = fn.name || 'unknown_skill';
+      argsBox.textContent = args;
+      status.textContent = '已选择';
+      middle.append(name, argsBox);
+      row.append(icon, middle, status);
+      card.appendChild(row);
+    });
+
+    conversationEl.appendChild(card);
+    card.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }
+
+  function renderStageResult(target, result, okText, badText) {
+    target.innerHTML = '';
+    const state = makeElement('div', 'state ' + (result.success ? 'ok' : 'bad'));
+    state.textContent = result.success ? okText : badText;
+    target.appendChild(state);
+    const errors = Array.isArray(result.errors) ? result.errors : [];
+    if (errors.length) {
+      const detail = makeElement('pre');
+      detail.textContent = errors.join('\n');
+      target.appendChild(detail);
+    }
+  }
+
+  function trimTrailingSlashes(value) {
+    return value.replace(/\/+$/, '');
+  }
+
+  const METRICS_REFRESH_MS = 4000;
+  let metricsBusy = false;
+
+  function setMetric(valueEl, fillEl, percent) {
+    const value = Math.max(0, Math.min(100, Number(percent) || 0));
+    valueEl.textContent = value.toFixed(0) + '%';
+    fillEl.style.width = value + '%';
+  }
+
+  async function refreshSystemMetrics() {
+    if (!invoke || metricsBusy || document.hidden) {
+      return;
+    }
+    metricsBusy = true;
+    try {
+      const metrics = await invoke('system_metrics');
+      setMetric(cpuValueEl, cpuFillEl, metrics.cpuPercent);
+      setMetric(memoryValueEl, memoryFillEl, metrics.memoryPercent);
+      metricsUpdatedEl.textContent = '更新于 ' + new Date().toLocaleTimeString('zh-CN', { hour12: false });
+    } catch (error) {
+      metricsUpdatedEl.textContent = '读取失败';
+    } finally {
+      metricsBusy = false;
+    }
+  }
+
+  let pipelineProgressTimer = null;
+  let pipelineProgressStartedAt = 0;
+  let pipelineProgressFinished = false;
+  let pipelinePollTimer = null;
+  let pipelinePollMisses = 0;
+
+  function formatElapsedDuration(totalSeconds) {
+    const seconds = Math.max(0, Math.floor(totalSeconds));
+    if (seconds < 60) {
+      return seconds + ' 秒';
+    }
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) {
+      return minutes + ' 分 ' + (seconds % 60) + ' 秒';
+    }
+    const hours = Math.floor(minutes / 60);
+    return hours + ' 小时 ' + (minutes % 60) + ' 分';
+  }
+
+  function tickPipelineElapsed() {
+    if (!pipelineProgressStartedAt) {
+      return;
+    }
+    pipelineProgressElapsedEl.textContent = '已运行 ' +
+      formatElapsedDuration((Date.now() - pipelineProgressStartedAt) / 1000);
+  }
+
+  function stopPipelinePolling() {
+    if (pipelinePollTimer) {
+      clearInterval(pipelinePollTimer);
+      pipelinePollTimer = null;
+    }
+  }
+
+  async function pollPipelineStatus() {
+    if (!invoke) {
+      return;
+    }
+    try {
+      const status = await invoke('pipeline_status');
+      if (status) {
+        pipelinePollMisses = 0;
+        updatePipelineProgress(status);
+      } else if (!pipelineProgressFinished) {
+        pipelinePollMisses += 1;
+        if (pipelinePollMisses === 8) {
+          pipelineProgressMessageEl.textContent =
+            '暂未收到后端运行状态；如持续无变化，请重启应用后重试。';
+        }
+      }
+    } catch (error) {
+      // Keep the last known progress.
+    }
+  }
+
+  function startPipelinePolling() {
+    pipelinePollMisses = 0;
+    stopPipelinePolling();
+    pollPipelineStatus();
+    pipelinePollTimer = setInterval(pollPipelineStatus, 1000);
+  }
+
+  function beginPipelineProgress() {
+    pipelineProgressFinished = false;
+    pipelineProgressStartedAt = Date.now();
+    pipelineProgressEl.hidden = false;
+    pipelineProgressStageEl.textContent = '准备中';
+    pipelineProgressPercentEl.textContent = '0%';
+    pipelineProgressFillEl.style.width = '0%';
+    pipelineProgressMessageEl.textContent = '正在校验输入…';
+    tickPipelineElapsed();
+    if (pipelineProgressTimer) {
+      clearInterval(pipelineProgressTimer);
+    }
+    pipelineProgressTimer = setInterval(tickPipelineElapsed, 1000);
+    startPipelinePolling();
+  }
+
+  function endPipelineProgress(success, message) {
+    stopPipelinePolling();
+    if (pipelineProgressTimer) {
+      clearInterval(pipelineProgressTimer);
+      pipelineProgressTimer = null;
+    }
+    if (pipelineProgressFinished) {
+      return;
+    }
+    pipelineProgressFinished = true;
+    pipelineProgressStageEl.textContent = success ? '完成' : '结束';
+    if (success) {
+      pipelineProgressPercentEl.textContent = '100%';
+      pipelineProgressFillEl.style.width = '100%';
+    }
+    pipelineProgressMessageEl.textContent = message;
+    pipelineProgressElapsedEl.textContent = '总用时 ' +
+      formatElapsedDuration((Date.now() - pipelineProgressStartedAt) / 1000);
+  }
+
+  function updatePipelineProgress(payload) {
+    if (!payload) {
+      return;
+    }
+    pipelineProgressEl.hidden = false;
+    if (payload.stage) {
+      pipelineProgressStageEl.textContent = payload.stage;
+    }
+    if (payload.message) {
+      pipelineProgressMessageEl.textContent = payload.message;
+    }
+    const percent = Math.max(0, Math.min(100, Number(payload.percent) || 0));
+    pipelineProgressPercentEl.textContent = Math.round(percent) + '%';
+    pipelineProgressFillEl.style.width = percent + '%';
+    if (payload.done) {
+      pipelineProgressFinished = true;
+      stopPipelinePolling();
+      if (pipelineProgressTimer) {
+        clearInterval(pipelineProgressTimer);
+        pipelineProgressTimer = null;
+      }
+      pipelineProgressElapsedEl.textContent = '总用时 ' +
+        formatElapsedDuration((Date.now() - pipelineProgressStartedAt) / 1000);
+    }
+  }
+
+  let pipelineCutoffLoadId = 0;
+
+  function resetPipelineCutoff(label) {
+    pipelineCutoffEl.replaceChildren();
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = label;
+    pipelineCutoffEl.appendChild(option);
+    pipelineCutoffEl.disabled = true;
+  }
+
+  async function loadClusterCutoffs(preferredCutoff) {
+    const loadId = ++pipelineCutoffLoadId;
+    const databaseDir = trimTrailingSlashes(pipelineDatabaseEl.value.trim());
+    const previous = preferredCutoff !== undefined && preferredCutoff !== null
+      ? String(preferredCutoff)
+      : pipelineCutoffEl.value;
+    resetPipelineCutoff(databaseDir ? '加载中…' : '自动加载');
+    if (!databaseDir || !invoke) {
+      return null;
+    }
+    try {
+      const values = await invoke('cluster_cutoffs', { databaseDir: databaseDir });
+      if (loadId !== pipelineCutoffLoadId ||
+          trimTrailingSlashes(pipelineDatabaseEl.value.trim()) !== databaseDir) {
+        return null;
+      }
+      if (!Array.isArray(values) || values.length === 0) {
+        throw new Error('数据库没有可用的聚类阈值');
+      }
+      const cutoffs = values.map(Number);
+      pipelineCutoffEl.replaceChildren();
+      cutoffs.forEach(function (cutoff) {
+        const option = document.createElement('option');
+        option.value = String(cutoff);
+        option.textContent = String(cutoff);
+        pipelineCutoffEl.appendChild(option);
+      });
+      const selected = cutoffs.map(String).indexOf(previous) >= 0
+        ? previous
+        : (cutoffs.indexOf(1000) >= 0 ? '1000' : String(cutoffs[0]));
+      pipelineCutoffEl.value = selected;
+      pipelineCutoffEl.disabled = false;
+      return cutoffs;
+    } catch (error) {
+      if (loadId === pipelineCutoffLoadId) {
+        resetPipelineCutoff('加载失败');
+        showToast('聚类阈值加载失败：' + String(error));
+      }
+      return null;
+    }
+  }
+
+  async function runPipelineModeFromForm() {
+    const databaseDir = trimTrailingSlashes(pipelineDatabaseEl.value.trim());
+    const list = trimTrailingSlashes(pipelineListEl.value.trim());
+    const outputDir = trimTrailingSlashes(pipelineOutputEl.value.trim());
+    if (!databaseDir || !list) {
+      showToast('请先填写数据库目录和列表文件');
+      return;
+    }
+    const cutoffs = await loadClusterCutoffs();
+    if (!cutoffs) {
+      return;
+    }
+    const request = {
+      mode: '',
+      databaseDir: databaseDir,
+      list: list,
+      outputDir: outputDir,
+      cutoff: Number(pipelineCutoffEl.value)
+    };
+    runPipelineModeBtn.disabled = true;
+    runPipelineModeBtn.textContent = '流程运行中';
+    beginPipelineProgress();
+    try {
+      const result = await invoke('run_pipeline_mode', { request: request });
+      renderStageResult(pipelineResultEl, result, '流程执行完成', '流程执行失败');
+      endPipelineProgress(result.success, result.success ? '全部阶段执行完成' : '流程结束，存在错误');
+      if (result.success) {
+        showToast('全部阶段执行完成');
+      }
+    } catch (error) {
+      endPipelineProgress(false, '流程执行异常：' + String(error));
+      showToast(String(error));
+    } finally {
+      runPipelineModeBtn.disabled = false;
+      runPipelineModeBtn.textContent = '开始运行';
+    }
+  }
+
+  function formatPipelineMode(mode) {
+    if (!mode) {
+      return '未知';
+    }
+    if (mode === '2lie-mp-samtool2Result') {
+      return 'mpileup2Result';
+    }
+    return mode;
+  }
+
+  function summarizePipelineOutcome(outcome) {
+    const result = outcome && outcome.result;
+    if (!result) {
+      return 'Skill 执行没有返回结果。';
+    }
+    const lines = [];
+    lines.push((result.success ? '流程执行完成' : '流程执行失败') +
+      '（模式：' + formatPipelineMode(outcome.mode) + '）');
+    lines.push('输出目录：' + result.workingDir);
+    const outputs = Array.isArray(result.outputs) ? result.outputs : [];
+    if (outputs.length) {
+      lines.push('产物（共 ' + outputs.length + ' 个）：');
+      outputs.slice(0, 6).forEach(function (path) { lines.push(path); });
+      if (outputs.length > 6) {
+        lines.push('…');
+      }
+    }
+    const errors = Array.isArray(result.errors) ? result.errors : [];
+    if (errors.length) {
+      lines.push('错误：');
+      errors.slice(0, 5).forEach(function (error) { lines.push(error); });
+    }
+    return lines.join('\n');
+  }
+
+  async function syncPipelineForm(argumentsValue) {
+    const args = argumentsValue || {};
+    const databaseDir = args.database_dir || args.databaseDir;
+    const list = args.list || args.sample_list || args.sampleList;
+    const outputDir = args.output_dir || args.outputDir;
+    const cutoff = args.cutoff !== undefined ? args.cutoff : args.cluster_cutoff;
+    if (databaseDir) {
+      pipelineDatabaseEl.value = databaseDir;
+    }
+    if (list) {
+      pipelineListEl.value = list;
+    }
+    if (outputDir) {
+      pipelineOutputEl.value = outputDir;
+    }
+    return await loadClusterCutoffs(cutoff);
+  }
+
+  async function executePipelineSkill(args, message) {
+    if (!invoke) {
+      appendAssistantMessage('Tauri IPC 不可用，无法执行 Skill。');
+      return;
+    }
+    const cutoffs = await syncPipelineForm(args);
+    if (!cutoffs) {
+      appendAssistantMessage('无法加载数据库的聚类阈值，流程未启动。');
+      return;
+    }
+    beginPipelineProgress();
+    showToast('正在运行 StrainScale 流程…');
+    try {
+      const outcome = await invoke('run_agent_tool', {
+        request: { name: 'strain_pipeline', arguments: args, message: message || '' }
+      });
+      renderStageResult(pipelineResultEl, outcome.result, '流程执行完成', '流程执行失败');
+      endPipelineProgress(
+        outcome.result.success,
+        outcome.result.success ? '全部阶段执行完成' : '流程结束，存在错误'
+      );
+      appendAssistantMessage(summarizePipelineOutcome(outcome));
+      await syncPipelineForm(args);
+      showToast(outcome.result.success ? '全部阶段执行完成' : '流程执行失败');
+    } catch (error) {
+      endPipelineProgress(false, '流程执行异常：' + String(error));
+      appendAssistantMessage('Skill 执行失败：' + String(error));
+      showToast(String(error));
+    }
+  }
+
+  async function executeToolCalls(toolCalls, message) {
+    for (const toolCall of toolCalls) {
+      const fn = (toolCall && toolCall.function) || {};
+      const name = fn.name || 'unknown_skill';
+      if (name !== 'strain_pipeline') {
+        appendAssistantMessage('解析到 ' + name + '，但当前版本只接入了 strain_pipeline 执行器。');
+        continue;
+      }
+
+      let args;
+      try {
+        args = JSON.parse(fn.arguments || '{}');
+      } catch (error) {
+        appendAssistantMessage('Skill 参数解析失败：' + String(error));
+        continue;
+      }
+      await executePipelineSkill(args, message);
+    }
+  }
+
+  async function runSkillFromPlan(message) {
+    showToast('正在按路径规则解析任务…');
+    try {
+      const plan = await invoke('plan_pipeline', { message: message });
+      const args = {
+        database_dir: plan.databaseDir,
+        list: plan.list,
+        output_dir: plan.outputDir,
+        mode: plan.mode,
+        cutoff: plan.cutoff
+      };
+      appendAssistantMessage('已按路径规则解析：\n模式：' + formatPipelineMode(plan.mode) +
+        '\n数据库：' + plan.databaseDir + '\n列表：' + plan.list +
+        (plan.outputDir ? '\n输出目录：' + plan.outputDir : '') +
+        (plan.cutoff !== null && plan.cutoff !== undefined ? '\n聚类 cutoff：' + plan.cutoff : ''));
+      appendToolCalls([{ function: { name: 'strain_pipeline', arguments: JSON.stringify(args) } }]);
+      await executePipelineSkill(args, message);
+    } catch (error) {
+      appendAssistantMessage('无法自动规划 Skill：' + String(error) +
+        '\n请提供数据库目录（含 ref.fa/add）和 .list 样本列表，可在右侧流程面板手动填写后运行。');
+    }
+  }
+
+  async function submitTask(value) {
+    appendUserMessage(value);
+    input.value = '';
+    taskSessionId = currentSessionId;
+
+    try {
+      const decision = await invoke('agent_route', {
+        request: { message: value }
+      });
+
+      if (decision.route === 'chat') {
+        appendAssistantMessage('当前版本已移除内嵌大模型，仅支持菌株分析任务。' +
+          '\n请提供数据库目录和 .list 样本列表，或在右侧流程面板手动填写参数后运行。');
+        return;
+      }
+
+      if (decision.route === 'clarify') {
+        appendAssistantMessage(decision.clarification || '请先补充真实输入文件。');
+        return;
+      }
+
+      await runSkillFromPlan(value);
+    } catch (error) {
+      showToast(String(error));
+    } finally {
+      taskSessionId = null;
+    }
+  }
+
+  function submitMessage() {
+    const value = input.value.trim();
+    if (!value) {
+      showToast('请先输入任务描述');
+      return;
+    }
+    if (!invoke) {
+      showToast('Tauri IPC 不可用');
+      return;
+    }
+    submitTask(value);
+  }
+
+  window.addEventListener('focus', function () {
+    if (!pipelineProgressFinished && !pipelineProgressEl.hidden) {
+      pollPipelineStatus();
+    }
+  });
+  newTaskBtn.addEventListener('click', startNewTask);
+  sendBtn.addEventListener('click', submitMessage);
+  pipelineDatabaseEl.addEventListener('change', function () {
+    loadClusterCutoffs();
+  });
+  runPipelineModeBtn.addEventListener('click', function () {
+    if (!invoke) {
+      showToast('Tauri IPC 不可用');
+      return;
+    }
+    runPipelineModeFromForm();
+  });
+  if (tauri && tauri.event && typeof tauri.event.listen === 'function') {
+    tauri.event.listen('pipeline-progress', function (event) {
+      updatePipelineProgress(event && event.payload);
+    });
+  }
+  input.addEventListener('compositionstart', function () {
+    input.dataset.composing = 'true';
+  });
+  input.addEventListener('compositionend', function () {
+    input.dataset.composing = 'true';
+    setTimeout(function () {
+      input.dataset.composing = 'false';
+    }, 0);
+  });
+  input.addEventListener('keydown', function (event) {
+    if (
+      event.isComposing ||
+      event.keyCode === 229 ||
+      input.dataset.composing === 'true' ||
+      event.key !== 'Enter' ||
+      event.shiftKey
+    ) {
+      return;
+    }
+    event.preventDefault();
+    submitMessage();
+  });
+
+  loadSessions();
+  renderSessionList();
+  const latestSession = sortedSessions()[0];
+  if (latestSession) {
+    openSession(latestSession.id);
+  } else {
+    renderWelcome();
+    updateHeader(null);
+  }
+
+  refreshSystemMetrics();
+  setInterval(refreshSystemMetrics, METRICS_REFRESH_MS);
+  // ---------- 中英文切换 ----------
+  const LANG_KEY = 'strainscale.language';
+  const langToggle = document.getElementById('langToggle');
+  let lang = localStorage.getItem(LANG_KEY) === 'en' ? 'en' : 'zh';
+
+  const EN_TEXT = {
+    'StrainScale Agent 界面原型': 'StrainScale Agent UI Prototype',
+    'StrainScale Agent — Apple Silicon 本地运行时': 'StrainScale Agent — Apple Silicon Local Runtime',
+    '静态原型': 'Static prototype',
+    '新建分析任务': 'New analysis task',
+    '新分析任务': 'New analysis task',
+    '分析任务': 'Analysis task',
+    '最近会话': 'Recent sessions',
+    '网络访问': 'Network access',
+    '获取更新': 'Get updates',
+    '未启动': 'Not started',
+    '关闭': 'Off',
+    '本地运行 · 对话自动保存': 'Runs locally · Chats auto-saved',
+    '添加任务目录': 'Add task directory',
+    '描述分析任务，或让 Agent 生成、检查一段流程脚本…': 'Describe the task, or ask the Agent to generate or inspect a pipeline script…',
+    '发送': 'Send',
+    '消息先经过意图路由，再交给本地流程执行器；不联网、不上传数据': 'Messages are intent-routed, then handed to the local pipeline executor. Offline, no uploads.',
+    '平台': 'Platform',
+    '状态': 'Status',
+    '端口': 'Port',
+    '停止': 'Stop',
+    'StrainScale 流程': 'StrainScale pipeline',
+    '数据库目录': 'Database directory',
+    '聚类 cutoff': 'Cluster cutoff',
+    '自动加载': 'Auto load',
+    '加载中…': 'Loading…',
+    '加载失败': 'Load failed',
+    '列表文件': 'List file',
+    '开始运行': 'Run pipeline',
+    '准备中': 'Preparing',
+    '资源': 'Resources',
+    '读取中…': 'Loading…',
+    '内存': 'Memory',
+    '知识图谱': 'Knowledge graph',
+    '知识图谱迷你示意图': 'Knowledge graph mini diagram',
+    '样本': 'Sample',
+    '菌株': 'Strain',
+    '基因': 'Gene',
+    '表型': 'Phenotype',
+    '证据': 'Evidence',
+    '本体 v0.1 · 关系需带证据来源': 'Ontology v0.1 · Relations need evidence sources',
+    '演示原型：文件选择器尚未接入': 'Prototype: file picker is not wired up',
+    '就绪': 'Ready',
+    'Tauri IPC 不可用': 'Tauri IPC unavailable',
+    '刚刚': 'Just now',
+    '暂无历史会话': 'No sessions yet',
+    '删除会话': 'Delete session',
+    '你好，我是 StrainScale 本地助手。': 'Hi, I am the local StrainScale assistant.',
+    '可以直接描述任务并给出路径，例如：运行 /path/to/db、/path/to/sample.list、/path/to/output。': 'Describe the task with paths, e.g. run /path/to/db, /path/to/sample.list, /path/to/output.',
+    '每次对话都会自动保存到左侧“最近会话”，点击即可恢复。': 'Every chat is auto-saved under "Recent sessions" on the left; click to restore.',
+    '任务运行中，暂不能删除该会话': 'Task is running; this session cannot be deleted yet',
+    '会话已删除': 'Session deleted',
+    '已新建分析任务': 'New analysis task created',
+    '我': 'Me',
+    '受控 Skill 调用': 'Controlled Skill invocation',
+    '已解析流程参数 · 正在交给执行器': 'Pipeline arguments parsed · handing over to the executor',
+    '已选择': 'Selected',
+    '读取失败': 'Read failed',
+    '暂未收到后端运行状态；如持续无变化，请重启应用后重试。': 'No backend status received; restart the app and retry if it persists.',
+    '正在校验输入…': 'Validating inputs…',
+    '完成': 'Done',
+    '结束': 'Finished',
+    '请先填写数据库目录和列表文件': 'Fill in the database directory and list file',
+    '数据库没有可用的聚类阈值': 'No cluster cutoff is available in this database',
+    '无法加载数据库的聚类阈值，流程未启动。': 'Cannot load database cluster cutoffs; pipeline was not started.',
+    '输出目录': 'Output directory',
+    '分析内核': 'Analysis core',
+    '原生 arm64': 'Native arm64',
+    '流程运行中': 'Pipeline running',
+    '流程执行完成': 'Pipeline completed',
+    '流程执行失败': 'Pipeline failed',
+    '全部阶段执行完成': 'All stages completed',
+    '流程结束，存在错误': 'Pipeline ended with errors',
+    'Skill 执行没有返回结果。': 'The Skill returned no result.',
+    '未知': 'unknown',
+    '错误：': 'Error: ',
+    'Tauri IPC 不可用，无法执行 Skill。': 'Tauri IPC unavailable; cannot run the Skill.',
+    '正在运行 StrainScale 流程…': 'Running the StrainScale pipeline…',
+    '正在按路径规则解析任务…': 'Parsing the task from paths…',
+    '已按路径规则解析：': 'Parsed from paths:',
+    '请先补充真实输入文件。': 'Please provide real input files first.',
+    '请先输入任务描述': 'Enter a task description first'
+  };
+
+  const EN_RULES = [
+    [/^(\d+)年(\d+)月(\d+)日$/, '$1/$2/$3'],
+    [/^(\d+)月(\d+)日$/, '$1/$2'],
+    [/^今天 (\d{1,2}:\d{2})$/, 'Today $1'],
+    [/^(\d+) 分钟前$/, '$1 min ago'],
+    [/^(\d+) 秒$/, '$1 s'],
+    [/^(\d+) 分 (\d+) 秒$/, '$1 m $2 s'],
+    [/^(\d+) 小时 (\d+) 分$/, '$1 h $2 m']
+  ];
+
+  const EN_PHRASES = [
+    ['本地会话 · ', 'Local session · '],
+    [' · 自动保存', ' · auto-saved'],
+    [' 条消息', ' messages'],
+    ['已运行 ', 'Elapsed '],
+    ['总用时 ', 'Total '],
+    ['更新于 ', 'Updated '],
+    [' 分钟前', ' min ago'],
+    ['今天 ', 'Today '],
+    [' 小时 ', 'h '],
+    [' 分 ', 'm '],
+    [' 秒', 's'],
+    ['阶段 ', 'Stage '],
+    ['产物（共 ', 'Outputs ('],
+    [' 个）：', '):'],
+    ['输出目录：', 'Output directory: '],
+    ['（模式：', ' (mode: '],
+    ['未知', 'unknown'],
+    ['）', ')'],
+    ['流程执行异常：', 'Pipeline error: '],
+    ['Skill 执行失败：', 'Skill failed: '],
+    ['Skill 参数解析失败：', 'Skill argument parsing failed: '],
+    ['无法自动规划 Skill：', 'Cannot plan the Skill automatically: '],
+    ['解析到 ', 'Resolved '],
+    ['，但当前版本只接入了 strain_pipeline 执行器。', ', but only the strain_pipeline executor is supported in this version.'],
+    ['已按路径规则解析：', 'Parsed from paths:'],
+    ['当前版本已移除内嵌大模型，仅支持菌株分析任务。', 'The bundled LLM has been removed; only strain analysis tasks are supported.'],
+    ['\n请提供数据库目录和 .list 样本列表，或在右侧流程面板手动填写参数后运行。', '\nProvide a database directory and a .list sample list, or fill in the pipeline panel on the right.'],
+    ['\n模式：', '\nMode: '],
+    ['\n数据库：', '\nDatabase: '],
+    ['\n列表：', '\nList: '],
+    ['\n输出目录：', '\nOutput directory: '],
+    ['\n聚类 cutoff：', '\nCluster cutoff: '],
+    ['聚类阈值加载失败：', 'Failed to load cluster cutoffs: '],
+  ];
+
+  function toEnglish(core) {
+    if (EN_TEXT[core]) return EN_TEXT[core];
+    let out = core;
+    EN_RULES.forEach(function (rule) { out = out.replace(rule[0], rule[1]); });
+    EN_PHRASES.forEach(function (pair) {
+      if (out.indexOf(pair[0]) !== -1) out = out.split(pair[0]).join(pair[1]);
+    });
+    return out;
+  }
+
+  const HAS_CJK = /[\u4e00-\u9fff]/;
+  let langLock = false;
+
+  function collectZh(node) {
+    const raw = node.nodeValue;
+    if (!raw || !raw.trim()) return;
+    const core = raw.trim();
+    if (!HAS_CJK.test(core)) { if (node.__zh == null) node.__zh = core; return; }
+    node.__zh = core;
+  }
+
+  function walkTextNodes(root, fn) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(fn);
+  }
+
+  const LANG_ATTRS = ['placeholder', 'aria-label', 'title'];
+
+  function applyLanguage() {
+    langLock = true;
+    walkTextNodes(document.body, function (node) {
+      if (node.__zh == null) return;
+      if (!HAS_CJK.test(node.__zh)) return;
+      const raw = node.nodeValue || '';
+      const lead = raw.match(/^\s*/)[0];
+      const trail = raw.match(/\s*$/)[0];
+      node.nodeValue = lead + (lang === 'en' ? toEnglish(node.__zh) : node.__zh) + trail;
+    });
+    document.querySelectorAll('[placeholder],[aria-label],[title]').forEach(function (el) {
+      LANG_ATTRS.forEach(function (attr) {
+        const cur = el.getAttribute(attr);
+        if (!cur) return;
+        const slot = '__zh_' + attr;
+        if (el[slot] == null) el[slot] = cur;
+        el.setAttribute(attr, lang === 'en' ? toEnglish(el[slot]) : el[slot]);
+      });
+    });
+    langLock = false;
+    document.title = lang === 'en' ? 'StrainScale Agent UI Prototype' : 'StrainScale Agent 界面原型';
+    langToggle.textContent = lang === 'en' ? '中文' : 'EN';
+    langToggle.setAttribute('aria-label', lang === 'en' ? 'Switch to Chinese' : '切换界面语言');
+    document.documentElement.lang = lang === 'en' ? 'en' : 'zh-CN';
+  }
+
+  function translateFreshNode(node) {
+    if (lang !== 'en') return;
+    const raw = node.nodeValue;
+    if (!raw || !raw.trim()) return;
+    const core = raw.trim();
+    if (!HAS_CJK.test(core)) return;
+    // 已经是译文（或本来就等于原文）时不再写回，避免 MutationObserver 自触发死循环
+    if (node.__zh != null && (core === node.__zh || core === toEnglish(node.__zh))) return;
+    node.__zh = core;
+    const out = toEnglish(core);
+    if (out === core) return;
+    const lead = raw.match(/^\s*/)[0];
+    const trail = raw.match(/\s*$/)[0];
+    node.nodeValue = lead + out + trail;
+  }
+
+  const langObserver = new MutationObserver(function (records) {
+    if (langLock) return;
+    langLock = true;
+    records.forEach(function (record) {
+      if (record.type === 'attributes') {
+        const attr = record.attributeName;
+        if (LANG_ATTRS.indexOf(attr) === -1) return;
+        const el = record.target;
+        const cur = el.getAttribute(attr);
+        if (!cur) return;
+        const slot = '__zh_' + attr;
+        if (el[slot] != null && (cur === el[slot] || cur === toEnglish(el[slot]))) return;
+        el[slot] = cur;
+        if (lang === 'en') el.setAttribute(attr, toEnglish(cur));
+        return;
+      }
+      if (record.type === 'characterData') { translateFreshNode(record.target); return; }
+      Array.prototype.forEach.call(record.addedNodes, function (node) {
+        if (node.nodeType === 3) translateFreshNode(node);
+        else if (node.nodeType === 1) walkTextNodes(node, translateFreshNode);
+      });
+    });
+    langLock = false;
+  });
+
+  walkTextNodes(document.body, collectZh);
+  applyLanguage();
+  langObserver.observe(document.body, {
+    childList: true,
+    subtree: true,
+    characterData: true,
+    attributes: true,
+    attributeFilter: LANG_ATTRS
+  });
+  updateLink.addEventListener('click', function (event) {
+    event.preventDefault();
+    if (!invoke) {
+      showToast('Tauri IPC 不可用');
+      return;
+    }
+    invoke('open_external', { url: updateLink.href }).catch(function (error) {
+      showToast(String(error));
+    });
+  });
+
+  langToggle.addEventListener('click', function () {
+    lang = lang === 'en' ? 'zh' : 'en';
+    localStorage.setItem(LANG_KEY, lang);
+    applyLanguage();
+    showToast(lang === 'en' ? 'Language switched to English' : '已切换为中文');
+  });
+
+})();
+</script>
+</body>
+</html>

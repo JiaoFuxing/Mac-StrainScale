@@ -1,0 +1,21 @@
+[package]
+name = "strainscale-agent"
+version = "0.5.0"
+description = "StrainScale Agent desktop"
+authors = ["StrainScale"]
+edition = "2021"
+
+[lib]
+name = "strainscale_agent_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri = { version = "2", features = [] }
+
+[features]
+custom-protocol = ["tauri/custom-protocol"]

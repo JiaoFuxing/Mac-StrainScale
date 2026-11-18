@@ -1,0 +1,19 @@
+# 构建产物
+target/
+node_modules/
+dist/
+*.o
+*.a
+!mbgc-source/mbgc-zstd-prestrain/src/libs/*.a
+
+# 历史模型文件（0.5.0 已移除内嵌模型，保留规则避免误提交）
+*.gguf
+desktop/src-tauri/resources/models/
+models/
+
+# 本地工具链与打包产物
+tools/
+*.app
+
+# 系统
+.DS_Store
